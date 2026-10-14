@@ -1,0 +1,81 @@
+# Default configuration for the ScaleLadder context-degradation study.
+# Every number here is deliberately small so that the first end-to-end run
+# finishes on a single consumer GPU in well under an hour. Scale it up only
+# after the smoke test has produced a results file you trust.
+
+run_name: default
+output_dir: runs
+seed: 1234
+seeds: [1234, 1235, 1236]        # repeated runs per condition, used for error bars
+
+# ---------------------------------------------------------------------------
+# Scale ladder: parameter count varies WITHIN a family, everything else fixed.
+# Start with the smallest ladder (smollm2), add qwen2.5 once it works.
+# ---------------------------------------------------------------------------
+models:
+  - id: HuggingFaceTB/SmolLM2-135M-Instruct
+    family: smollm2
+    params_b: 0.135
+  - id: HuggingFaceTB/SmolLM2-360M-Instruct
+    family: smollm2
+    params_b: 0.36
+  - id: HuggingFaceTB/SmolLM2-1.7B-Instruct
+    family: smollm2
+    params_b: 1.7
+  # - id: Qwen/Qwen2.5-0.5B-Instruct
+  #   family: qwen2.5
+  #   params_b: 0.5
+  # - id: Qwen/Qwen2.5-1.5B-Instruct
+  #   family: qwen2.5
+  #   params_b: 1.5
+  # - id: Qwen/Qwen2.5-3B-Instruct
+  #   family: qwen2.5
+  #   params_b: 3.0
+  # - id: Qwen/Qwen2.5-7B-Instruct
+  #   family: qwen2.5
+  #   params_b: 7.0
+  # - id: google/gemma-3-1b-it
+  #   family: gemma3
+  #   params_b: 1.0
+  # - id: google/gemma-3-4b-it
+  #   family: gemma3
+  #   params_b: 4.0
+
+generation:
+  max_new_tokens: 96
+  temperature: 0.0               # greedy: degradation should not be a sampling artefact
+  dtype: bfloat16
+  device_map: auto
+  batch_size: 4
+  trust_remote_code: false
+
+# ---------------------------------------------------------------------------
+# Tasks. Both loaders pull public datasets from the Hub on first use.
+# ---------------------------------------------------------------------------
+tasks:
+  - name: multihop_qa                # HotpotQA distractor split
+    n_examples: 60
+  - name: math_wordproblems          # GSM8K test split
+    n_examples: 60
+
+# ---------------------------------------------------------------------------
+# The four independent stress dials. One dial moves at a time, and the FIRST
+# listed value of every dial is the default the others are held at. The
+# defaults below are the headline condition of the paper: hard distractors,
+# evidence in the middle, one answer item.
+# ---------------------------------------------------------------------------
+stress:
+  input_lengths: [1000, 4000, 16000, 32000]   # target prompt length in tokens
+  filler_types: [hard_distractor, whitespace, in_domain_shuffled]
+  evidence_positions: [middle, start, end]
+  output_lengths: [1]                          # answer items required, dial 4
+
+# ---------------------------------------------------------------------------
+# Analysis. a_floor is the score a non-reading model would get, used for the
+# headroom-normalised degradation score. Measure it, do not guess it.
+# ---------------------------------------------------------------------------
+analysis:
+  short_length: 1000               # reference length for the degradation scores
+  bootstrap_samples: 2000
+  floor_mode: measured             # measured | zero
+  min_headroom: 5.0                # points of accuracy above floor required to report D_hn

@@ -1,0 +1,27 @@
+# Core runtime for the ScaleLadder context-degradation study.
+# Tested with Python 3.10 - 3.12. Install with:
+#   python -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+
+torch>=2.4.0
+transformers>=4.45.0
+accelerate>=1.0.0
+datasets>=3.0.0
+huggingface-hub>=0.26.0
+sentencepiece>=0.2.0
+
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.13.0
+statsmodels>=0.14.2
+matplotlib>=3.9.0
+
+PyYAML>=6.0.1
+tqdm>=4.66.0
+rich>=13.7.0
+
+# Optional, uncomment when you move from a single GPU to batched sweeps.
+# vllm>=0.6.3
+# Optional, only needed for the frontier reference curve in configs/default.yaml.
+# anthropic>=0.40.0
+# openai>=1.50.0

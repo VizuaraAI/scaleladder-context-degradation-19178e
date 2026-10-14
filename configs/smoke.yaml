@@ -1,0 +1,36 @@
+# Smallest possible end-to-end run. One model, two lengths, one filler type.
+# This exists so you can prove the plumbing works before spending GPU hours.
+
+run_name: smoke
+output_dir: runs
+seed: 1234
+seeds: [1234]
+
+models:
+  - id: HuggingFaceTB/SmolLM2-135M-Instruct
+    family: smollm2
+    params_b: 0.135
+
+generation:
+  max_new_tokens: 48
+  temperature: 0.0
+  dtype: float32          # CPU friendly; switch to bfloat16 on a GPU
+  device_map: auto
+  batch_size: 2
+  trust_remote_code: false
+
+tasks:
+  - name: multihop_qa
+    n_examples: 10
+
+stress:
+  input_lengths: [1000, 4000]
+  filler_types: [hard_distractor]
+  evidence_positions: [middle]
+  output_lengths: [1]
+
+analysis:
+  short_length: 1000
+  bootstrap_samples: 500
+  floor_mode: measured
+  min_headroom: 5.0
